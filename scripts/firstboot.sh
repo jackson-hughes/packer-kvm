@@ -3,22 +3,22 @@
 # Update OS
 yum -y update
 
-# Create Ansible service user
-useradd ansible
+# Add Puppetlabs repository
+rpm -Uvh https://yum.puppet.com/puppet6-release-el-7.noarch.rpm
 
-# Create .ssh directory
-mkdir /home/ansible/.ssh/
+# Install Git & Puppet
+yum install -y git puppet-agent
 
-# Retrieve latest SSH keys from Github
-SSH_KEY="$(curl https://github.com/jhughes01.keys)"
+# Install r10k
+/opt/puppetlabs/puppet/bin/gem install r10k
 
-# Add my SSH key as an authorised key for Ansible user
-cat <<EOF > /home/ansible/.ssh/authorized_keys
-$SSH_KEY
-EOF
+# Clone control repo
+rm -rf /etc/puppetlabs/code/environments/production
+git clone https://github.com/jhughes01/control-repo /etc/puppetlabs/code/environments/production
 
-# Correct file ownership and permissions
-chown -R ansible: /home/ansible/.ssh && chmod 600 /home/ansible/.ssh/authorized_keys
+# Install modules
+cd /etc/puppetlabs/code/environments/production && /opt/puppetlabs/puppet/bin/r10k puppetfile install --verbose
 
-# Allow Ansible to execute passwordless sudo
-echo -e "ansible\tALL=(ALL) NOPASSWD: ALL\nDefaults:ansible\t!requiretty" > /etc/sudoers.d/ansible_all
+# Run Puppet
+/opt/puppetlabs/puppet/bin/puppet apply /etc/puppetlabs/code/environments/production/manifests/site.pp
+
