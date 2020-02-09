@@ -14,7 +14,7 @@ pipeline {
         }
         stage('build') {
             steps {
-                sh "./build-image.sh"
+                sh "./packer build centos7.json"
             }
         }
     }
